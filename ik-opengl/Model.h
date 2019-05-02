@@ -1,5 +1,5 @@
 #pragma once
-
+//模型类
 // Std. Includes
 #include <string>
 #include <fstream>
@@ -11,7 +11,7 @@
 using namespace std;
 
 // GL Includes
-#include <GL/glew.h> // Contains all the necessery OpenGL includes
+#include <glad/glad.h> // Contains all the necessery OpenGL includes
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -19,6 +19,7 @@ using namespace std;
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <GL/gl.h>
 
 #include "Mesh.h"
 
@@ -30,7 +31,7 @@ public:
   /*  Functions   */
   // Constructor, expects a filepath to a 3D model.
   Model(){}
-  Model(GLchar* path);
+  Model(const GLchar* path);
   
   // Draws the model, and thus all its meshes
   void Draw(Shader shader);

@@ -1,5 +1,5 @@
 #pragma once
-
+//网格类
 // Std. Includes
 #include <string>
 #include <fstream>
@@ -10,7 +10,7 @@
 using namespace std;
 
 // GL Includes
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

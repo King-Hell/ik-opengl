@@ -14,7 +14,7 @@
 #include <map>
 
 #include "Chain.h"
-
+#define GLM_ENABLE_EXPERIMENTAL
 // GLM includes
 #include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
@@ -25,7 +25,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/projection.hpp>
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 // Tree data structure
 struct ChainNode {

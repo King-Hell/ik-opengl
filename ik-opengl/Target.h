@@ -1,8 +1,6 @@
-/////////////////////
-// ModelObject.h
-/////////////////////
-
+//目标点类
 #pragma once
+
 #include "Shader.h"
 #include "Model.h"
 #include "Camera.h"
@@ -15,6 +13,7 @@
 #include <iostream>
 #include <vector>
 
+#define GLM_ENABLE_EXPERIMENTAL
 // GLM includes
 #include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
@@ -24,30 +23,29 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 class Target {
 public:
-  glm::vec3 position;
-  float pitch;
-  float yaw;
-  glm::vec3 scale;
-  
-  // Functions
-  Target(int x, int y, int z);
-  void Render(glm::mat4 view, glm::mat4 proj);
-  void ProcessTranslation(Camera_Movement direction, GLfloat deltaTime);
-  
+    /* Data */
+    glm::vec3 position;//目标点位置
+    float pitch;//俯仰角
+    float yaw;//偏航角
+    glm::vec3 scale;//缩放
+
+    /* Functions */
+    Target(float x, float y, float z);//构造方法
+    void Render(glm::mat4 view, glm::mat4 proj);//渲染方法
+    void ProcessTranslation(Camera_Movement direction, GLfloat deltaTime);//位移方法
+
 private:
-  
-  /* Data */
-  Model objectModel;
-  GLchar* pathToModel      = "/Users/jezhou/Git/classes/s17/ik-opengl/sphere.off";
-  GLchar* vertexShaderPath = "/Users/jezhou/Git/classes/s17/ik-opengl/shader.vs";
-  GLchar* fragShaderPath   = "/Users/jezhou/Git/classes/s17/ik-opengl/shader.frag";
-  Shader objectShader;
-  
-  /* Functions */
-  
-  
+
+    /* Data */
+    Model objectModel;//模型
+    const GLchar *pathToModel = "../sphere.off";//模型路径
+    const GLchar *vertexShaderPath = "../shader.vs";//顶点着色器
+    const GLchar *fragShaderPath = "../shader.frag";//片段着色器
+    Shader objectShader;//着色器对象
+
+    /* Functions */
 };

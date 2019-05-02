@@ -3,7 +3,7 @@
 
 #include "Model.h"
 
-Model::Model(GLchar* path){
+Model::Model(const GLchar* path){
   this->LoadModel(path);
 }
 
