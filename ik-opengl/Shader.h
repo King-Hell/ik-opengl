@@ -108,7 +108,10 @@ public:
         glUseProgram(this->Program);
     }
 
-    void setFloat3(const char *name, float x, float y, float z) {
+    void setFloat1(const char name[], float value) const {
+        glUniform1f(glGetUniformLocation(Program, name), value);
+    }
+    void setFloat3(const char name[], float x, float y, float z) {
         /*设置3f属性*/
         glUniform3f(glGetUniformLocation(Program, name), x,y,z);
     }

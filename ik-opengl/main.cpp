@@ -35,8 +35,9 @@ bool firstMouse = true;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
-Target* tars[6];
-Target* tar;
+Target *tars[6];
+Target *tar;
+
 //主函数
 int main() {
 
@@ -44,8 +45,8 @@ int main() {
     cout
             << "IK OpenGL - Jesse & Robb - CSE 163, Project 4, SP17\n1: Single chain\n2: Multichain\n3: Single Chain w/ Constraint\nEnter the model you want here: ";
     //cin >> desired_model;
-    desired_model[0]='2';
-    desired_model[1]='\0';
+    desired_model[0] = '2';
+    desired_model[1] = '\0';
     cout << desired_model << endl;
     //GLFW初始化
     glfwInit();
@@ -101,22 +102,22 @@ int main() {
     //Chain chain1(joints1, &target);
     //Chain chain2(joints2, &target);
     //chain2.please_constrain = true;
-    tars[1]=&target2;
-    tars[2]=&target3;
-    tars[3]=&target4;
-    tars[4]=&target5;
-    tars[5]=&target6;
-    tar=&target2;
+    tars[1] = &target2;
+    tars[2] = &target3;
+    tars[3] = &target4;
+    tars[4] = &target5;
+    tars[5] = &target6;
+    tar = &target2;
     vector<Chain *> vec;
 /*    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), &target));
     vec.push_back(new Chain(glm::vec3(0, 1, 0), glm::vec3(1, 1, 0), &target, 2));
     vec.push_back(new Chain(glm::vec3(0, 1, 0), glm::vec3(-1, 2, 0), &target3, 2));
     vec.push_back(new Chain(glm::vec3(0, 1, 0), glm::vec3(-1, 1.5, 0), &target2, 2));*/
-    vec.push_back(new Chain(glm::vec3(0, 0.5f, 0), glm::vec3(0, 0, 0), &target6,2));
+    vec.push_back(new Chain(glm::vec3(0, 0.5f, 0), glm::vec3(0, 0, 0), &target6, 2));
     vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(-1.0f, 0, 0), &target2, 2));
     vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(1.0f, 0, 0), &target3, 2));
     vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(-1.0f, -1.0f, 0), &target4, 2));
-    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(1.0f, -1.0f, 0), &target5, 2));
+    vec.push_back(new Chain(glm::vec3(-1.0f, -1.0f, 0), glm::vec3(1.0f, -1.0f, 0), &target5, 2));
     MultiChain multichain(vec);
 
     // Game loop
@@ -174,12 +175,12 @@ int main() {
 // Moves/alters the target position based on user input
 void Do_Movement(Target *target) {
 
-    if ((keys[GLFW_KEY_LEFT_SHIFT]||keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
+    if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
         target->ProcessTranslation(FORWARD, deltaTime);
     else if (keys[GLFW_KEY_UP])
         target->ProcessTranslation(UP, deltaTime);
 
-    if ((keys[GLFW_KEY_LEFT_SHIFT]||keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
+    if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
         target->ProcessTranslation(BACKWARD, deltaTime);
     else if (keys[GLFW_KEY_DOWN])
         target->ProcessTranslation(DOWN, deltaTime);
@@ -200,8 +201,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         keys[key] = true;
     else if (action == GLFW_RELEASE)
         keys[key] = false;
-    if(action==GLFW_PRESS&&key>=GLFW_KEY_2&&key<=GLFW_KEY_6)
-        tar=tars[key-GLFW_KEY_2+1];
+    if (action == GLFW_PRESS && key >= GLFW_KEY_2 && key <= GLFW_KEY_6)
+        tar = tars[key - GLFW_KEY_2 + 1];
 
 
 }

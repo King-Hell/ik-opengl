@@ -14,7 +14,7 @@ Chain::Chain(vector<glm::vec3> joints, Target *t) {
     vector<glm::quat> directions;
     CalculateLinks(joints, &lengths, &directions);
 
-    for (int i = 0; i < lengths.size(); ++i) {
+    for (int i = 0; i < (int)lengths.size(); ++i) {
         segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i]));
         total_length += lengths[i];
     }
@@ -26,7 +26,10 @@ Chain::Chain(vector<glm::vec3> joints, Target *t) {
 }
 
 Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions) {
-
+    if(origin==end){
+        cerr << "Origin and End can't be same!"<< endl;
+        exit(-1);
+    }
     vector<float> lengths;
     vector<glm::quat> directions;
     vector<glm::vec3> joints;
@@ -37,14 +40,14 @@ Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions) {
     float partial_mag = magnitude / (float) partitions;
 
     joints.push_back(origin);
-    for (int i = 1; i <= partitions; ++i) {
+    for (int i = 1; i <= partitions-1; ++i) {
         glm::vec3 to_insert = partition_checkpoint + partial_mag * i * dir;
         joints.push_back(to_insert);
     }
-
+    joints.push_back(end);
     CalculateLinks(joints, &lengths, &directions);
 
-    for (int i = 0; i < lengths.size(); ++i) {
+    for (int i = 0; i < (int)lengths.size(); ++i) {
         segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i]));
         total_length += lengths[i];
     }
@@ -64,7 +67,7 @@ void Chain::Solve() {
 
     // Target is out of reach; fully extend the arm
     if (current_distance > total_length) {
-        for (int i = 0; i < joints.size() - 1; ++i) {
+        for (int i = 0; i < (int)joints.size() - 1; ++i) {
             float r = glm::length(target->position - joints[i]);
             float l = segments[i].magnitude / r;
             joints[i + 1] = (1 - l) * joints[i] + l * target->position;
@@ -105,7 +108,7 @@ void Chain::SetSegments() {
     vector<glm::quat> directions;
     CalculateLinks(joints, &lengths, &directions);
 
-    for (int i = 0; i < lengths.size(); ++i) {
+    for (int i = 0; i < (int)lengths.size(); ++i) {
         segments[i].Set(joints[i], joints[i + 1], lengths[i], directions[i]);
     }
 }
@@ -115,6 +118,11 @@ void Chain::Backward() {
     auto end = joints.end() - 1;
     *end = target->position;
     for (int i = int(joints.size() - 2); i >= 0; --i) {
+        /* p3p4'长度=r
+         * p3'=p4'+|p3'p4'|/|p3p4'|*(p3-p4')
+         * |p3p4'|=r
+         * |p3'p4'|/|p3p4'|=l
+         * */
         float r = glm::length(joints[i + 1] - joints[i]);
         float l = segments[i].magnitude / r;
         joints[i] = (1 - l) * joints[i + 1] + l * joints[i];
@@ -122,9 +130,10 @@ void Chain::Backward() {
 }
 
 void Chain::Forward() {
+    /*前向计算*/
     auto beg = joints.begin();
     *beg = origin;
-    for (int i = 0; i < joints.size() - 1; ++i) {
+    for (int i = 0; i < (int)joints.size() - 1; ++i) {
         float r = glm::length(joints[i + 1] - joints[i]);
         float l = segments[i].magnitude / r;
 

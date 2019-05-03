@@ -48,10 +48,8 @@ void Segment::Render(glm::mat4 view, glm::mat4 proj) {
     objectShader.setMat4("view",view);
     objectShader.setMat4("projection",proj);
     // Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
-    glUniform1f(glGetUniformLocation(objectShader.Program, "material.shininess"), 16.0f);
-
-    // VBO stuff
-
+    objectShader.setFloat1("material.shininess",16.0f);
+    // VBO 六面体
     float vertices[] = {
             -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
             0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,

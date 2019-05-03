@@ -42,7 +42,7 @@ public:
   void Solve();
   void Render(glm::mat4 view, glm::mat4 proj);
 
-  ChainNode * root;
+  ChainNode * root;//根节点
   map<ChainNode*, bool> leaves;
   glm::vec3 origin;
   

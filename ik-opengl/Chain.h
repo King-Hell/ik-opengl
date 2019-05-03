@@ -54,14 +54,14 @@ public:
 
     unsigned long size;//关节数量
     float total_length;//骨骼链总长度
-    glm::vec3 origin;
-    glm::vec3 end;
+    glm::vec3 origin;//头关节
+    glm::vec3 end;//尾关节
     Target *target;
     bool please_constrain = false;
 
 private:
-    vector<glm::vec3> joints; // Joints themselves
-    vector<Segment> segments; // The pieces that actually get rendered
+    vector<glm::vec3> joints; // 关节
+    vector<Segment> segments; // 骨骼
     float tolerance = 0.01f;
 
 };
