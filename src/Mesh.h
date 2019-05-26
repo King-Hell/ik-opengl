@@ -39,11 +39,11 @@ public:
   // Constructor
   Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures);
   
-  // Render the mesh
-  void Draw(Shader shader);
+  // render the mesh
+  void draw(Shader shader);
 
 private:
-  /*  Render data  */
+  /*  render data  */
   GLuint VAO, VBO, EBO;
   
   /*  Functions    */

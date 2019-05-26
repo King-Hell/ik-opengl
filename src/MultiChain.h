@@ -38,15 +38,17 @@ class MultiChain {
 
 public:
   MultiChain(vector<Chain*> chains);
-  bool Insert(ChainNode * root, Chain * chain);
-  void Solve();
-  void Render(glm::mat4 view, glm::mat4 proj);
+  bool insert(ChainNode *root, Chain *chain);
+  void solve();
+  void render(glm::mat4 view, glm::mat4 proj);
+  void moveHead(Camera_Movement direction, GLfloat deltaTime);
 
   ChainNode * root;//根节点
   map<ChainNode*, bool> leaves;
   glm::vec3 origin;
   
 private:
-  void Forward(ChainNode * root);
-  void Backward(ChainNode * root);
+  void forward(ChainNode *root);
+  void backward(ChainNode *root);
+  void resetTarget(ChainNode *root,glm::vec3 shift);
 };

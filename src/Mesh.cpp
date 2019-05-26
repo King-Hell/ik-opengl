@@ -13,7 +13,7 @@ Mesh::Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> text
   this->setupMesh();
 }
 
-void Mesh::Draw(Shader shader)  {
+void Mesh::draw(Shader shader)  {
   
   // Bind appropriate textures
   GLuint diffuseNr = 1;
@@ -39,7 +39,7 @@ void Mesh::Draw(Shader shader)  {
   // Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
   glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), 16.0f);
   
-  // Draw mesh
+  // draw mesh
   glBindVertexArray(this->VAO);
   glDrawElements(GL_TRIANGLES, this->indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
@@ -72,7 +72,7 @@ void Mesh::setupMesh(){
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->indices.size() * sizeof(GLuint), &this->indices[0], GL_STATIC_DRAW);
   
-  // Set the vertex attribute pointers
+  // set the vertex attribute pointers
   // Vertex Positions
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);

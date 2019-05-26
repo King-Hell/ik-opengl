@@ -4,15 +4,15 @@
 #include "Model.h"
 
 Model::Model(const GLchar* path){
-  this->LoadModel(path);
+    this->loadModel(path);
 }
 
-void Model::Draw(Shader shader) {
+void Model::draw(Shader shader) {
   for(GLuint i = 0; i < this->meshes.size(); i++)
-    this->meshes[i].Draw(shader);
+      this->meshes[i].draw(shader);
 }
 
-void Model::LoadModel(string path){
+void Model::loadModel(string path){
   
   // Read file via ASSIMP
   Assimp::Importer importer;
@@ -29,10 +29,10 @@ void Model::LoadModel(string path){
   this->directory = path.substr(0, path.find_last_of('/'));
   
   // Process ASSIMP's root node recursively
-  this->ProcessNode(scene->mRootNode, scene);
+    this->processNode(scene->mRootNode, scene);
 }
 
-void Model::ProcessNode(aiNode* node, const aiScene* scene){
+void Model::processNode(aiNode *node, const aiScene *scene){
   
   // Process each mesh located at the current node
   for(GLuint i = 0; i < node->mNumMeshes; i++)
@@ -40,16 +40,16 @@ void Model::ProcessNode(aiNode* node, const aiScene* scene){
     // The node object only contains indices to index the actual objects in the scene.
     // The scene contains all the data, node is just to keep stuff organized (like relations between nodes).
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-    this->meshes.push_back(this->ProcessMesh(mesh, scene));
+    this->meshes.push_back(this->processMesh(mesh, scene));
   }
   // After we've processed all of the meshes (if any) we then recursively process each of the children nodes
   for(GLuint i = 0; i < node->mNumChildren; i++)
   {
-    this->ProcessNode(node->mChildren[i], scene);
+      this->processNode(node->mChildren[i], scene);
   }
 }
 
-Mesh Model::ProcessMesh (aiMesh* mesh, const aiScene* scene){
+Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene){
   
   // Data to fill
   vector<Vertex> vertices;

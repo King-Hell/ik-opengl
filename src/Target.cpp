@@ -16,9 +16,9 @@ Target::Target(float x, float y, float z) {
     yaw = 0.0f;
 }
 
-void Target::Render(glm::mat4 view, glm::mat4 proj) {
+void Target::render(glm::mat4 view, glm::mat4 proj) {
     /*渲染函数*/
-    objectShader.Use();
+    objectShader.use();
     //设置片段着色器 物体颜色 光照颜色 光照位置 视角位置
     objectShader.setFloat3("objectColor", 1.0f, 1.0f, 1.0f);
     objectShader.setFloat3("lightColor", 1.0f, 0.0f, 0.0f);
@@ -34,10 +34,10 @@ void Target::Render(glm::mat4 view, glm::mat4 proj) {
     objectShader.setMat4("view",view);
     objectShader.setMat4("projection",proj);
     //模型渲染
-    objectModel.Draw(objectShader);
+    objectModel.draw(objectShader);
 }
 
-void Target::ProcessTranslation(Camera_Movement direction, GLfloat deltaTime) {
+void Target::processTranslation(Camera_Movement direction, GLfloat deltaTime) {
     /*位移处理方法*/
     GLfloat velocity = 2.0f * deltaTime;
     if (direction == UP)
@@ -52,5 +52,4 @@ void Target::ProcessTranslation(Camera_Movement direction, GLfloat deltaTime) {
         this->position.z += 1.0f * velocity;
     if (direction == BACKWARD)
         this->position.z -= 1.0f * velocity;
-
 }

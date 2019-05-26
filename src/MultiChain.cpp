@@ -20,7 +20,7 @@ MultiChain::MultiChain(vector<Chain *> chains) {
 
     for (auto it = chains.begin() + 1; it != chains.end(); ++it) {
         Chain *current = *it;
-        success = true && Insert(root, current);
+        success = true && insert(root, current);
     }
 
     if (!success) {
@@ -30,7 +30,7 @@ MultiChain::MultiChain(vector<Chain *> chains) {
     }
 }
 
-bool MultiChain::Insert(ChainNode *root, Chain *chain) {
+bool MultiChain::insert(ChainNode *root, Chain *chain) {
     if (glm::all(glm::equal(root->value->end, chain->origin))) {
         //该骨骼链与父节点尾部相接，为子节点
         ChainNode *new_node = new ChainNode();
@@ -52,7 +52,7 @@ bool MultiChain::Insert(ChainNode *root, Chain *chain) {
         bool was_inserted = false;
         for (auto it = root->children->begin(); it != root->children->end(); ++it) {
             ChainNode *recurse = *it;
-            was_inserted = was_inserted || Insert(recurse, chain);
+            was_inserted = was_inserted || insert(recurse, chain);
             if (was_inserted) break;
         }
         return was_inserted;
@@ -62,30 +62,30 @@ bool MultiChain::Insert(ChainNode *root, Chain *chain) {
     return false; //当有某条链独立时，连接失败
 }
 
-void MultiChain::Solve() {
+void MultiChain::solve() {
     /*计算IK*/
     root->value->origin = origin;
-    root->value->SetFirstJoint(origin);
+    root->value->setFirstJoint(origin);
 
-    Backward(root);
-    root->value->Solve();
-    Forward(root);
+    backward(root);
+    root->value->solve();
+    forward(root);
 
 }
 
-void MultiChain::Backward(ChainNode *root) {
+void MultiChain::backward(ChainNode *root) {
     /*后向计算*/
     if (!root->children->empty()) {
         for (auto it = root->children->begin(); it != root->children->end(); ++it) {
-            Backward(*it);
+            backward(*it);
         }
 
         //计算质心
-        glm::vec3 centroid;
+        glm::vec3 centroid(0);
         int i = 0;
         for (auto it = root->children->begin(); it != root->children->end(); ++it) {
             ChainNode *node = *it;
-            centroid += node->value->GetFirstJoint();
+            centroid += node->value->getFirstJoint();
             ++i;
         }
         centroid = centroid / (float) i;
@@ -94,26 +94,26 @@ void MultiChain::Backward(ChainNode *root) {
     }
 
     if (root->parent) {
-        root->value->Backward();
+        root->value->backward();
     }
 }
 
-void MultiChain::Forward(ChainNode *root) {
+void MultiChain::forward(ChainNode *root) {
     /*前向计算*/
     if (!root->children->empty()) {
         for (auto it = root->children->begin(); it != root->children->end(); ++it) {
-            Forward(*it);
+            forward(*it);
         }
     }
 
     if (root->parent) {
         root->value->origin = root->parent->value->end;
-        root->value->Forward();
-        root->value->SetSegments();
+        root->value->forward();
+        root->value->setSegments();
     }
 }
 
-void MultiChain::Render(glm::mat4 view, glm::mat4 proj) {
+void MultiChain::render(glm::mat4 view, glm::mat4 proj) {
     /*使用栈模拟递归绘制所有节点*/
     stack<ChainNode *> traverse;
     traverse.push(root);
@@ -121,7 +121,7 @@ void MultiChain::Render(glm::mat4 view, glm::mat4 proj) {
     while (!traverse.empty()) {
         ChainNode *cur = traverse.top();
 
-        cur->value->Render(view, proj);
+        cur->value->render(view, proj);
         traverse.pop();
         for (auto it = cur->children->begin(); it != cur->children->end(); ++it) {
             traverse.push(*it);
@@ -129,3 +129,49 @@ void MultiChain::Render(glm::mat4 view, glm::mat4 proj) {
     }
 
 }
+
+void MultiChain::moveHead(Camera_Movement direction, GLfloat deltaTime) {
+    /*移动头结点*/
+    GLfloat velocity = 2.0f * deltaTime;
+    GLfloat x=origin[0],y=origin[1],z=origin[2];
+/*    glm::vec3 shift(0);
+    if (direction == UP)
+        shift[1] += 1.0f * velocity;
+    if (direction == DOWN)
+        shift[1] -= 1.0f * velocity;
+    if (direction == LEFT)
+        shift[0] -= 1.0f * velocity;
+    if (direction == RIGHT)
+        shift[0] += 1.0f * velocity;
+    if (direction == FORWARD)
+        shift[2] += 1.0f * velocity;
+    if (direction == BACKWARD)
+        shift[2] -= 1.0f * velocity;
+    origin+=shift;*/
+
+    if (direction == UP)
+        y += 1.0f * velocity;
+    if (direction == DOWN)
+        y -= 1.0f * velocity;
+    if (direction == LEFT)
+        x -= 1.0f * velocity;
+    if (direction == RIGHT)
+        x += 1.0f * velocity;
+    if (direction == FORWARD)
+        z += 1.0f * velocity;
+    if (direction == BACKWARD)
+        z -= 1.0f * velocity;
+    origin=glm::vec3(x,y,z);
+    //resetTarget(root,shift);
+}
+
+void MultiChain::resetTarget(ChainNode *root,glm::vec3 shift) {
+    root->value->target->position=root->value->end;
+    if (!root->children->empty()) {
+        for (auto it = root->children->begin(); it != root->children->end(); ++it) {
+            resetTarget(*it,shift);
+        }
+    }
+}
+
+

@@ -69,13 +69,13 @@ public:
   }
   
   // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-  glm::mat4 GetViewMatrix()
+  glm::mat4 getViewMatrix()
   {
     return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
   }
   
   // Processes input received from the keyboard
-  void ProcessTranslation(Camera_Movement direction, GLfloat deltaTime)
+  void processTranslation(Camera_Movement direction, GLfloat deltaTime)
   {
     GLfloat velocity = this->MovementSpeed * deltaTime;
     if (direction == FORWARD)
@@ -87,14 +87,33 @@ public:
     if (direction == RIGHT)
       this->Position -= this->Right * velocity;
   }
-  
+    void processMouseMovement(float xoffset, float yoffset, unsigned char constrainPitch = true)
+    {
+        xoffset *= MouseSensitivity;
+        yoffset *= MouseSensitivity;
+
+        Yaw += xoffset;
+        Pitch += yoffset;
+
+        // Make sure that when pitch is out of bounds, screen doesn't get flipped
+        if (constrainPitch)
+        {
+            if (Pitch > 89.0f)
+                Pitch = 89.0f;
+            if (Pitch < -89.0f)
+                Pitch = -89.0f;
+        }
+
+        // Update Front, Right and Up Vectors using the updated Euler angles
+        updateCameraVectors();
+    }
   // Processes input received from a mouse scroll-wheel event
-  void ProcessMouseScroll(GLfloat yoffset)
+  void processMouseScroll(GLfloat yoffset)
   {
     float zoomSmallLimit = 47.0f;
-    float zoomLargeLimit = 44.5f;
+    float zoomLargeLimit = 44.0f;
    
-    yoffset *= .1f;
+    yoffset *= 0.1f;
     if (this->Zoom >= zoomLargeLimit && this->Zoom <= zoomSmallLimit)
       this->Zoom -= yoffset;
     if (this->Zoom <= zoomLargeLimit)

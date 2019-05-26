@@ -35,16 +35,16 @@ public:
 
     /* Functions */
     Target(float x, float y, float z);//构造方法
-    void Render(glm::mat4 view, glm::mat4 proj);//渲染方法
-    void ProcessTranslation(Camera_Movement direction, GLfloat deltaTime);//位移方法
+    void render(glm::mat4 view, glm::mat4 proj);//渲染方法
+    void processTranslation(Camera_Movement direction, GLfloat deltaTime);//位移方法
 
 private:
 
     /* Data */
     Model objectModel;//模型
-    const GLchar *pathToModel = "../sphere.off";//模型路径
-    const GLchar *vertexShaderPath = "../shader.vs";//顶点着色器
-    const GLchar *fragShaderPath = "../shader.frag";//片段着色器
+    const GLchar *pathToModel = "res/models/sphere.off";//模型路径
+    const GLchar *vertexShaderPath = "res/shaders/shader.vs";//顶点着色器
+    const GLchar *fragShaderPath = "res/shaders/shader.fs";//片段着色器
     Shader objectShader;//着色器对象
 
     /* Functions */

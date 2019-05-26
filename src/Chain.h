@@ -32,25 +32,27 @@ const glm::vec3 ref_rot_vector(0.0f, 0.0f, -1.0f);
 
 class Chain {
 public:
-    Chain(vector<glm::vec3> joints, Target *t);
+    Chain(vector<glm::vec3> &joints, Target *t);
 
-    Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions = 5);
+    Chain(vector<glm::vec3> &joints, Target *t,vector<glm::vec2> &scales);
 
-    void Render(glm::mat4 view, glm::mat4 proj);
+    Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions = 5,GLfloat xScale=0.1f,GLfloat yScale=0.1f);
 
-    void Solve();
+    void render(glm::mat4 &view, glm::mat4 &proj);
 
-    void Backward(); // Put second endpoint at target and work backwards
-    void Forward();  // Put first endpoint at origin and work forwards
-    glm::vec3 Constrain(glm::vec3 point, float true_length, Segment *seg);
+    void solve();
 
-    void CalculateLinks(vector<glm::vec3> joints, vector<float> *lengths, vector<glm::quat> *directions);
+    void backward(); // Put second endpoint at target and work backwards
+    void forward();  // Put first endpoint at origin and work forwards
+    glm::vec3 constrain(glm::vec3 point, float true_length, Segment *seg);
 
-    glm::vec3 GetFirstJoint();
+    void calculateLinks(vector<glm::vec3> &joints, vector<float> *lengths, vector<glm::quat> *directions);
 
-    void SetFirstJoint(glm::vec3 joint);
+    glm::vec3 getFirstJoint();
 
-    void SetSegments();
+    void setFirstJoint(glm::vec3 joint);
+
+    void setSegments();
 
     unsigned long size;//关节数量
     float total_length;//骨骼链总长度
@@ -58,6 +60,8 @@ public:
     glm::vec3 end;//尾关节
     Target *target;
     bool please_constrain = false;
+
+    void moveBegin(Camera_Movement direction, GLfloat deltaTime);//移动头结点
 
 private:
     vector<glm::vec3> joints; // 关节

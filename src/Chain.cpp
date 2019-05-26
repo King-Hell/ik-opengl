@@ -8,11 +8,11 @@
 
 #include "Chain.h"
 
-Chain::Chain(vector<glm::vec3> joints, Target *t) {
+Chain::Chain(vector<glm::vec3> &joints, Target *t) {
 
     vector<float> lengths;
     vector<glm::quat> directions;
-    CalculateLinks(joints, &lengths, &directions);
+    calculateLinks(joints, &lengths, &directions);
 
     for (int i = 0; i < (int)lengths.size(); ++i) {
         segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i]));
@@ -25,7 +25,24 @@ Chain::Chain(vector<glm::vec3> joints, Target *t) {
 
 }
 
-Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions) {
+Chain::Chain(vector<glm::vec3> &joints, Target *t,vector<glm::vec2> &scales) {
+
+    vector<float> lengths;
+    vector<glm::quat> directions;
+    calculateLinks(joints, &lengths, &directions);
+
+    for (int i = 0; i < (int)lengths.size(); ++i) {
+        segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i],scales[i][0],scales[i][1]));
+        total_length += lengths[i];
+    }
+
+    target = t;
+    size = joints.size();
+    this->joints = joints;
+
+}
+
+Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions,GLfloat xScale,GLfloat yScale) {
     if(origin==end){
         cerr << "Origin and End can't be same!"<< endl;
         exit(-1);
@@ -45,10 +62,10 @@ Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions) {
         joints.push_back(to_insert);
     }
     joints.push_back(end);
-    CalculateLinks(joints, &lengths, &directions);
+    calculateLinks(joints, &lengths, &directions);
 
     for (int i = 0; i < (int)lengths.size(); ++i) {
-        segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i]));
+        segments.push_back(Segment(joints[i], joints[i + 1], lengths[i], directions[i],xScale,yScale));
         total_length += lengths[i];
     }
 
@@ -58,13 +75,12 @@ Chain::Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions) {
 
 }
 
-void Chain::Solve() {
+void Chain::solve() {
     /*计算IK*/
     /*1.首先，针对一条从首端到尾端的bone chain，以及一个对应的Target point，
      * 先计算整条chain的长度，从而判断这个Target point是否可到达。
      */
     float current_distance = glm::length(target->position - origin);
-
     // Target is out of reach; fully extend the arm
     if (current_distance > total_length) {
         for (int i = 0; i < (int)joints.size() - 1; ++i) {
@@ -75,7 +91,7 @@ void Chain::Solve() {
 
         vector<float> lengths;
         vector<glm::quat> directions;
-        CalculateLinks(joints, &lengths, &directions);
+        calculateLinks(joints, &lengths, &directions);
 
     } else {
         /*2.如果整条骨骼链可以保证够得着的话，那么就可以开始进行FABRIK的处理。
@@ -87,11 +103,11 @@ void Chain::Solve() {
             /*3.首先，先从末端骨骼开始计算，先将最末端的骨骼p4移到目标位置t处，
              *此时骨骼p4的位置为p'4。然后，将p3和p′4连成一条直线，通过原有的p3和p4的距离，
              *将现在的p3拉到与p′4同样的距离处p′3。*/
-            Backward();
+            backward();
             /*4.再之后，再从根骨骼p′0开始处理。由于根骨骼再整个迭代过程中是默认为不动的，
              * 因此再把根骨骼p′′0移到原来的位置p0处，接着使用同样的距离约束，一直处理到尾骨骼p4。
              */
-            Forward();
+            forward();
             /*重复3~4的迭代过程，直到最终的尾骨骼位置与到达目标位置（或与目标位置距离小于某个预定值）停止。
              * 此时整个算法结束。*/
             difference = glm::length(joints[joints.size() - 1] - target->position);
@@ -99,21 +115,21 @@ void Chain::Solve() {
             if (count > 10) break;
         }
     }
-    SetSegments();
+    setSegments();
 
 }
 
-void Chain::SetSegments() {
+void Chain::setSegments() {
     vector<float> lengths;
     vector<glm::quat> directions;
-    CalculateLinks(joints, &lengths, &directions);
+    calculateLinks(joints, &lengths, &directions);
 
     for (int i = 0; i < (int)lengths.size(); ++i) {
-        segments[i].Set(joints[i], joints[i + 1], lengths[i], directions[i]);
+        segments[i].set(joints[i], joints[i + 1], lengths[i], directions[i]);
     }
 }
 
-void Chain::Backward() {
+void Chain::backward() {
     /*后向计算*/
     auto end = joints.end() - 1;
     *end = target->position;
@@ -129,7 +145,7 @@ void Chain::Backward() {
     }
 }
 
-void Chain::Forward() {
+void Chain::forward() {
     /*前向计算*/
     auto beg = joints.begin();
     *beg = origin;
@@ -139,12 +155,12 @@ void Chain::Forward() {
 
         glm::vec3 new_point = (1 - l) * joints[i] + l * joints[i + 1];
         if (i > 0 && this->please_constrain)
-            new_point = Constrain(new_point, segments[i].magnitude, &(segments[i - 1]));
+            new_point = constrain(new_point, segments[i].magnitude, &(segments[i - 1]));
         joints[i + 1] = new_point;
     }
 }
 
-void Chain::CalculateLinks(vector<glm::vec3> joints, vector<float> *lengths, vector<glm::quat> *directions) {
+void Chain::calculateLinks(vector<glm::vec3> &joints, vector<float> *lengths, vector<glm::quat> *directions) {
 
     origin = *joints.begin();
     end = *(joints.end() - 1);
@@ -170,7 +186,7 @@ void Chain::CalculateLinks(vector<glm::vec3> joints, vector<float> *lengths, vec
     }
 }
 
-glm::vec3 Chain::Constrain(glm::vec3 point, float true_length, Segment *seg) {
+glm::vec3 Chain::constrain(glm::vec3 point, float true_length, Segment *seg) {
 
     glm::vec3 retval = point;
     glm::vec3 relative_point = point - seg->end_position;
@@ -250,19 +266,38 @@ glm::vec3 Chain::Constrain(glm::vec3 point, float true_length, Segment *seg) {
     return retval;
 }
 
-void Chain::Render(glm::mat4 view, glm::mat4 proj) {
+void Chain::render(glm::mat4 &view, glm::mat4 &proj) {
     /*渲染方法*/
     for (auto it = segments.begin(); it != segments.end(); ++it) {
-        it->Render(view, proj);
+        it->render(view, proj);
     }
 }
 
-glm::vec3 Chain::GetFirstJoint() {
+glm::vec3 Chain::getFirstJoint() {
     /*获取第一个关节*/
     return joints[0];
 }
 
-void Chain::SetFirstJoint(glm::vec3 joint) {
+void Chain::setFirstJoint(glm::vec3 joint) {
     /*设置第一个关节*/
     joints[0] = joint;
+}
+
+void Chain::moveBegin(Camera_Movement direction, GLfloat deltaTime) {
+    /*移动头结点*/
+    GLfloat velocity = 2.0f * deltaTime;
+    GLfloat x=origin[0],y=origin[1],z=origin[2];
+    if (direction == UP)
+        y += 1.0f * velocity;
+    if (direction == DOWN)
+        y -= 1.0f * velocity;
+    if (direction == LEFT)
+        x -= 1.0f * velocity;
+    if (direction == RIGHT)
+        x += 1.0f * velocity;
+    if (direction == FORWARD)
+        z += 1.0f * velocity;
+    if (direction == BACKWARD)
+        z -= 1.0f * velocity;
+    origin=glm::vec3(x,y,z);
 }

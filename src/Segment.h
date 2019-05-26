@@ -9,7 +9,7 @@
 #include "Shader.h"
 #include "Model.h"
 #include "Camera.h"
-
+#include <stb/stb_image.h>
 // Std includes
 #include <stdio.h>
 #include <string>
@@ -43,24 +43,35 @@ public:
     void SetConstraintConeDegrees(glm::vec4 degrees);
 
     // Functions
-    Segment(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir);
+    Segment(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir,GLfloat xScale=0.1f,GLfloat yScale=0.1f);
 
-    void Render(glm::mat4 view, glm::mat4 proj);
+    ~Segment();
 
-    void ProcessTranslation(Camera_Movement direction, GLfloat deltaTime);
+    void render(glm::mat4 &view, glm::mat4 &proj);
 
-    void Set(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir);
+    void processTranslation(Camera_Movement direction, GLfloat deltaTime);
+
+    void set(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir);
 
     // 0, 1, 2, 3 = Up, Down, Left, Right. Make sure you wrap each index around a vec3
     glm::mat4 GetFaceNormals();
 
     glm::vec3 GetConstraintConeAxis();
 
+
+    unsigned int loadCubemap(string path);
 private:
 
     /* Data */
-    const GLchar *vertexShaderPath = "../seg.vs";
-    const GLchar *fragShaderPath = "../seg.frag";
+    const GLchar *vertexShaderPath = "res/shaders/seg.vs";
+    const GLchar *fragShaderPath = "res/shaders/seg.fs";
     Shader objectShader;
+    GLfloat xScale;
+    GLfloat yScale;
+    bool hasTexture;
+    unsigned int VBO, cubeVAO,cubemapTexture;
 
+    /* Functions */
+    void renderWithTexture(glm::mat4 &view, glm::mat4 &proj);
+    void renderInit();
 };
