@@ -38,7 +38,9 @@ public:
 
     Chain(glm::vec3 origin, glm::vec3 end, Target *t, int partitions = 5,GLfloat xScale=0.1f,GLfloat yScale=0.1f);
 
-    void render(glm::mat4 &view, glm::mat4 &proj);
+    void render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap);
+
+    void renderDepthMap(glm::mat4 &lightSpaceMatrix);
 
     void solve();
 
@@ -63,6 +65,7 @@ public:
 
     void moveBegin(Camera_Movement direction, GLfloat deltaTime);//移动头结点
 
+    void setTexture(int index,string path);
 private:
     vector<glm::vec3> joints; // 关节
     vector<Segment> segments; // 骨骼

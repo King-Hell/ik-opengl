@@ -266,10 +266,10 @@ glm::vec3 Chain::constrain(glm::vec3 point, float true_length, Segment *seg) {
     return retval;
 }
 
-void Chain::render(glm::mat4 &view, glm::mat4 &proj) {
+void Chain::render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap) {
     /*渲染方法*/
     for (auto it = segments.begin(); it != segments.end(); ++it) {
-        it->render(view, proj);
+        it->render(view, projection, lightSpaceMatrix, depthMap);
     }
 }
 
@@ -300,4 +300,15 @@ void Chain::moveBegin(Camera_Movement direction, GLfloat deltaTime) {
     if (direction == BACKWARD)
         z -= 1.0f * velocity;
     origin=glm::vec3(x,y,z);
+}
+
+void Chain::renderDepthMap(glm::mat4 &lightSpaceMatrix) {
+    /*渲染方法*/
+    for (auto it = segments.begin(); it != segments.end(); ++it) {
+        it->renderDepthMap(lightSpaceMatrix);
+    }
+}
+
+void Chain::setTexture(int index, string path) {
+    segments[index].loadCubemap(path,6);
 }

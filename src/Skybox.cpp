@@ -95,7 +95,7 @@ unsigned int Skybox::loadCubemap(std::vector<std::string> faces) {
     return textureID;
 }
 
-void Skybox::render(glm::mat4 view, glm::mat4 proj) {
+void Skybox::render(glm::mat4 &view, glm::mat4 &proj) {
     /*渲染方法*/
     // draw skybox as last
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content

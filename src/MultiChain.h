@@ -40,7 +40,8 @@ public:
   MultiChain(vector<Chain*> chains);
   bool insert(ChainNode *root, Chain *chain);
   void solve();
-  void render(glm::mat4 view, glm::mat4 proj);
+  void render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap);
+  void renderDepthMap(glm::mat4 &lightSpaceMatrix);
   void moveHead(Camera_Movement direction, GLfloat deltaTime);
 
   ChainNode * root;//根节点

@@ -42,8 +42,10 @@ void Target::processTranslation(Camera_Movement direction, GLfloat deltaTime) {
     GLfloat velocity = 2.0f * deltaTime;
     if (direction == UP)
         this->position.y += 1.0f * velocity;
-    if (direction == DOWN)
-        this->position.y -= 1.0f * velocity;
+    if (direction == DOWN){
+        if (this->position.y>-1.5f)
+            this->position.y -= 1.0f * velocity;
+    }
     if (direction == LEFT)
         this->position.x -= 1.0f * velocity;
     if (direction == RIGHT)

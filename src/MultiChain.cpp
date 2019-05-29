@@ -113,7 +113,7 @@ void MultiChain::forward(ChainNode *root) {
     }
 }
 
-void MultiChain::render(glm::mat4 view, glm::mat4 proj) {
+void MultiChain::render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap) {
     /*使用栈模拟递归绘制所有节点*/
     stack<ChainNode *> traverse;
     traverse.push(root);
@@ -121,7 +121,7 @@ void MultiChain::render(glm::mat4 view, glm::mat4 proj) {
     while (!traverse.empty()) {
         ChainNode *cur = traverse.top();
 
-        cur->value->render(view, proj);
+        cur->value->render(view, projection, lightSpaceMatrix, depthMap);
         traverse.pop();
         for (auto it = cur->children->begin(); it != cur->children->end(); ++it) {
             traverse.push(*it);
@@ -170,6 +170,22 @@ void MultiChain::resetTarget(ChainNode *root,glm::vec3 shift) {
     if (!root->children->empty()) {
         for (auto it = root->children->begin(); it != root->children->end(); ++it) {
             resetTarget(*it,shift);
+        }
+    }
+}
+
+void MultiChain::renderDepthMap(glm::mat4 &lightSpaceMatrix) {
+    /*使用栈模拟递归绘制所有节点*/
+    stack<ChainNode *> traverse;
+    traverse.push(root);
+
+    while (!traverse.empty()) {
+        ChainNode *cur = traverse.top();
+
+        cur->value->renderDepthMap(lightSpaceMatrix);
+        traverse.pop();
+        for (auto it = cur->children->begin(); it != cur->children->end(); ++it) {
+            traverse.push(*it);
         }
     }
 }

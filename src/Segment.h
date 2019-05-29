@@ -47,7 +47,9 @@ public:
 
     ~Segment();
 
-    void render(glm::mat4 &view, glm::mat4 &proj);
+    void render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap);
+
+    void renderDepthMap(glm::mat4 &lightSpaceMatrix);
 
     void processTranslation(Camera_Movement direction, GLfloat deltaTime);
 
@@ -58,18 +60,20 @@ public:
 
     glm::vec3 GetConstraintConeAxis();
 
+    void loadCubemap(string path, GLuint mapNum=1);
 
-    unsigned int loadCubemap(string path);
 private:
 
     /* Data */
     const GLchar *vertexShaderPath = "res/shaders/seg.vs";
     const GLchar *fragShaderPath = "res/shaders/seg.fs";
-    Shader objectShader;
+    const GLchar *vertexShadowShaderPath="res/shaders/shadow.vs";
+    const GLchar *fragShadowShaderPath = "res/shaders/shadow.fs";
+    Shader shader,simpleDepthShader;
     GLfloat xScale;
     GLfloat yScale;
     bool hasTexture;
-    unsigned int VBO, cubeVAO,cubemapTexture;
+    GLuint VBO, cubeVAO,cubemapTexture;
 
     /* Functions */
     void renderWithTexture(glm::mat4 &view, glm::mat4 &proj);

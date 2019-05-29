@@ -6,24 +6,19 @@
 //  Copyright © 2017 Jesse and Robb. All rights reserved.
 //
 
-
 #include "Segment.h"
-
-#include "Target.h"
-#include "Camera.h"
 
 Segment::Segment(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir, GLfloat xScale, GLfloat yScale) {
 
     // Shader init
-    Shader modelS(vertexShaderPath, fragShaderPath);
-    objectShader = modelS;
+    shader = Shader(vertexShaderPath, fragShaderPath);
+    simpleDepthShader = Shader(vertexShadowShaderPath, fragShadowShaderPath);
     this->xScale = xScale;
     this->yScale = yScale;
     hasTexture = false;
     renderInit();
-    cubemapTexture = loadCubemap("res/textures/skin1.jpg");
+    loadCubemap("res/textures/snowhite.jpg", 1);
     set(base, end, magnitude, dir);
-
 }
 
 void Segment::set(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir) {
@@ -34,38 +29,41 @@ void Segment::set(glm::vec3 base, glm::vec3 end, float magnitude, glm::quat dir)
     this->constraint_cone = glm::vec4(45.0f, 45.0f, 45.0f, 45.0f);
 }
 
-void Segment::render(glm::mat4 &view, glm::mat4 &proj) {
+void Segment::render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap) {
     /*渲染函数*/
-    objectShader.use();
-    //设置片段着色器 物体颜色 光照颜色 光照位置 视角位置
-    objectShader.setFloat3("objectColor", 1.0f, 1.0f, 1.0f);
-    objectShader.setFloat3("lightColor", 1.0f, 1.0f, 1.0f);
-    objectShader.setFloat3("lightPos", 1.0f, 1.0f, 3.0f);
-    objectShader.setFloat3("viewPos", 0.0, 0.0, 3.0);
-
-    //loadCubemap("skin.jpg");
-    //设置顶点着色器 位移 缩放 旋转
+    //计算模型矩阵 位移 缩放 旋转
     glm::mat4 model;
     glm::mat4 T = glm::translate(glm::mat4(1.0f), position);
-    glm::mat4 PT = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -0.5));
+    glm::mat4 PT = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -0.5f));
     glm::mat4 PS = glm::scale(glm::mat4(1.0f), glm::vec3(xScale, yScale, 1.0f));
     glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, magnitude));
     glm::mat4 R = glm::toMat4(quat);
     model = T * R * S * PT * PS;
-    objectShader.setMat4("model", model);
-    objectShader.setMat4("view", view);
-    objectShader.setMat4("projection", proj);
+    //渲染物体
+    shader.use();
+    //设置片段着色器 物体颜色 光照颜色 光照位置 视角位置
+    //shader.setFloat3("objectColor", 1.0f, 1.0f, 1.0f);
+    shader.setFloat3("lightColor", 1.0f, 1.0f, 1.0f);
+    shader.setFloat3("lightPos", -3.0f, 3.0f, 3.0f);
+    shader.setFloat3("viewPos", 0, 0, 3.0f);
+    shader.setMat4("model", model);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", projection);
+    shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
     // Also set each mesh's shininess property to a default value (if you want you could extend this to another mesh property and possibly change this value)
-    objectShader.setFloat1("material.shininess", 16.0f);
-
-    glBindVertexArray(cubeVAO);
+    shader.setFloat1("material.shininess", 16.0f);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
     glBindVertexArray(0);
 }
 
-unsigned int Segment::loadCubemap(string path) {
+void Segment::loadCubemap(string path, GLuint mapNum) {
+    /*加载纹理贴图*/
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
@@ -76,20 +74,36 @@ unsigned int Segment::loadCubemap(string path) {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_REPEAT);
 
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+    if(mapNum==1){
+        unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
 
-    if (data) {
-        for (int i = 0; i < 6; i++) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                         data);
+        if (data) {
+            for (int i = 0; i < 6; i++) {
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+                             data);
+            }
+            stbi_image_free(data);
+        } else {
+            std::cout << "Cubemap texture failed to load at path: " << path << std::endl;
+            stbi_image_free(data);
         }
-        stbi_image_free(data);
-    } else {
-        std::cout << "Cubemap texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
+    }else{
+        string pathBase=path.substr(0,path.find("."));
+        for(int i=0;i<mapNum;i++){
+            char pathEnd[7];
+            sprintf(pathEnd,"_%d.png",i);
+            string newPath=pathBase+pathEnd;
+            unsigned char *data = stbi_load(newPath.c_str(), &width, &height, &nrChannels, 0);
+            if (data) {
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,data);
+                stbi_image_free(data);
+            } else {
+                std::cout << "Cubemap texture failed to load at path: " << newPath << std::endl;
+                stbi_image_free(data);
+            }
+        }
     }
-
-    return textureID;
+    cubemapTexture = textureID;
 }
 
 glm::mat4 Segment::GetFaceNormals() {
@@ -187,11 +201,30 @@ void Segment::renderInit() {
     // normal attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    objectShader.use();
-    objectShader.setInt("cubeTexture", 0);
+    glBindVertexArray(0);
+    shader.use();
+    shader.setInt("cubeTexture", 0);
+    shader.setInt("shadowMap", 1);
 }
 
 Segment::~Segment() {
     //glDeleteVertexArrays(1,&cubeVAO);
     //glDeleteBuffers(1,&VBO);
+}
+
+void Segment::renderDepthMap(glm::mat4 &lightSpaceMatrix) {
+    /*渲染深度贴图*/
+    //计算模型矩阵 位移 缩放 旋转
+    glm::mat4 model;
+    glm::mat4 T = glm::translate(glm::mat4(1.0f), position);
+    glm::mat4 PT = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -0.5f));
+    glm::mat4 PS = glm::scale(glm::mat4(1.0f), glm::vec3(xScale, yScale, 1.0f));
+    glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, magnitude));
+    glm::mat4 R = glm::toMat4(quat);
+    model = T * R * S * PT * PS;
+    simpleDepthShader.use();
+    simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+    simpleDepthShader.setMat4("model", model);
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }

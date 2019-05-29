@@ -122,6 +122,10 @@ public:
     void setInt(const char name[], int value) const {
         glUniform1i(glGetUniformLocation(Program, name),value);
     }
+
+    void setVec3(const char name[], glm::vec3 &value) const {
+        glUniform3f(glGetUniformLocation(Program, name),value[0],value[1],value[2]);
+    }
 };
 
 #endif

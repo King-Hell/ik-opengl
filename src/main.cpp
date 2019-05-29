@@ -12,32 +12,38 @@
 #include "Target.h"
 #include "Chain.h"
 #include "MultiChain.h"
+#include "Ground.h"
+
 #define STB_IMAGE_IMPLEMENTATION
+
 #include "Skybox.h"
+#include "DepthMap.h"
 //GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 //窗口大小
-GLuint screenWidth = 1000, screenHeight = 1000;
+GLuint SCR_WIDTH = 1024, SCR_HEIGHT = 1024;
 
 //函数声明
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 
-void Do_Movement(Target *target, MultiChain *multiChain=NULL);
+void Do_Movement(Target *target, MultiChain *multiChain = NULL);
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
 bool keys[1024];
-GLfloat lastX = (GLfloat)screenWidth/2, lastY = (GLfloat)screenHeight/2;
+GLfloat lastX = (GLfloat) SCR_WIDTH / 2, lastY = (GLfloat) SCR_HEIGHT / 2;
 bool firstMouse = true;
 bool headFlag = false;
+bool moveFlag = false;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -46,13 +52,6 @@ Target *tar;
 
 //主函数
 int main() {
-
-    char desired_model[1000];
-    cout<< "IK OpenGL\n1: Single chain\n2: Multichain\n3: Single Chain w/ Constraint\nEnter the model you want here: ";
-    //cin >> desired_model;
-    desired_model[0] = '2';
-    desired_model[1] = '\0';
-    cout << desired_model << endl;
     //GLFW初始化
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -62,7 +61,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight,
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,
                                           "Computer graphics experiment based on IK, SDU CS Li Tong",
                                           nullptr, nullptr);
     glfwMakeContextCurrent(window);
@@ -71,8 +70,8 @@ int main() {
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetCursorPosCallback(window,mouse_callback);
-    glfwSetScrollCallback(window,scroll_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     //初始化GLAD
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
@@ -87,19 +86,6 @@ int main() {
     //开启深度测试和多重抗锯齿
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
-
-    // Load joints
-    vector<glm::vec3> joints1;
-    for (int i = 0; i < 10; ++i) {
-        float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        joints1.push_back(glm::vec3(0, r, 0));
-    }
-
-/*    vector<glm::vec3> joints2;
-    joints2.push_back(glm::vec3(0, 0.0f, 0));
-    joints2.push_back(glm::vec3(0, 1.0f, 0));
-    joints2.push_back(glm::vec3(1.0f, 2.0f, 0));*/
-
     //加载模型
     Target target(0, 0, 0);
     Target leftArm(-0.8f, 0, 0);
@@ -108,9 +94,6 @@ int main() {
     Target rightLeg(0.6f, -1.5f, 0);
     Target head(0, 0.5f, 0);
     Target body(0, -0.5f, 0);
-    Chain chain1(joints1, &target);
-    //Chain chain2(joints2, &target);
-    //chain2.please_constrain = true;
     tars[0] = &head;
     tars[1] = &leftArm;
     tars[2] = &rightArm;
@@ -120,63 +103,58 @@ int main() {
     tar = tars[1];
     vector<Chain *> vec;
     vector<glm::vec3> headJoints;
-    headJoints.push_back(glm::vec3(0,0.5f,0));
-    headJoints.push_back(glm::vec3(0,0.1f,0));
-    headJoints.push_back(glm::vec3(0,0,0));
+    headJoints.emplace_back(0, 0.5f, 0);
+    headJoints.emplace_back(0, 0.1f, 0);
+    headJoints.emplace_back(0, 0, 0);
     vector<glm::vec2> headScales;
-    headScales.push_back(glm::vec2(0.4f,0.4f));
-    headScales.push_back(glm::vec2(0.1f,0.1f));
-    vec.push_back(new Chain(headJoints,&head,headScales));
+    headScales.emplace_back(0.4f, 0.4f);
+    headScales.emplace_back(0.1f, 0.1f);
+    Chain *headNeck = new Chain(headJoints, &head, headScales);
+    headNeck->setTexture(0, "res/textures/ironman.png");
+    vec.push_back(headNeck);
     vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(-0.8f, 0, 0), &leftArm, 2));
     vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0.8f, 0, 0), &rightArm, 2));
-    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0, -0.7f, 0), &body, 1,0.4f,0.15f));
-    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(-0.6f, -1.5f, 0), &leftLeg, 2,0.12f,0.12f));
-    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(0.6f, -1.5f, 0), &rightLeg, 2,0.12f,0.12f));
+    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0, -0.7f, 0), &body, 1, 0.4f, 0.15f));
+    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(-0.6f, -1.5f, 0), &leftLeg, 2, 0.12f, 0.12f));
+    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(0.6f, -1.5f, 0), &rightLeg, 2, 0.12f, 0.12f));
     MultiChain multichain(vec);
     Skybox skybox;
+    Ground ground;
+    DepthMap depthMap;
+    //设置光线
+    glm::vec3 lightPos(-1.0f, 1.0f, 1.0f);
+    GLfloat near_plane = 1.0f, far_plane = 7.5f;
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0, 1.0f, 0));
+    glm::mat4 lightSpaceMatrix = lightProjection * lightView;
     while (!glfwWindowShouldClose(window)) {
-
+        /*渲染主循环*/
         //获取帧间隔
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-
         //检查回调函数
         glfwPollEvents();
-
         //清空缓冲区
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-
         //计算透视矩阵和视图矩阵
-        glm::mat4 projection = glm::perspective(camera.Zoom, (float) screenWidth / (float) screenHeight, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(camera.Zoom, (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.getViewMatrix();
-        //target.render(view, projection);
-
-        if (strcmp(desired_model, "1") == 0) {
-            Do_Movement(&target);
-            chain1.solve();
-            chain1.render(view, projection);
-            target.render(view, projection);
-        } else if (strcmp(desired_model, "2") == 0) {
-            Do_Movement(tar, &multichain);
-            multichain.solve();
-            multichain.render(view, projection);
-            for (int i = 0; i < 6; i++) {
-                tars[i]->render(view, projection);
-            }
-        } else if (strcmp(desired_model, "3") == 0) {
-            //chain2.solve();
-            //chain2.render(view, projection);
-        } else {
-            cout << "Invalid chain model" << endl;
-            break;
+        Do_Movement(tar, &multichain);
+        multichain.solve();
+        depthMap.begin();
+        multichain.renderDepthMap(lightSpaceMatrix);
+        ground.renderDepthMap(lightProjection);
+        depthMap.end(SCR_WIDTH, SCR_HEIGHT);
+        multichain.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
+        ground.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
+        for (int i = 0; i < 6; i++) {
+            tars[i]->render(view, projection);
         }
-        view=glm::mat4(glm::mat3(camera.getViewMatrix()));
-        skybox.render(view,projection);
-        //清楚缓冲
+        view = glm::mat4(glm::mat3(camera.getViewMatrix()));
+        skybox.render(view, projection);
+        //交换缓冲
         glfwSwapBuffers(window);
     }
 
@@ -232,6 +210,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         tar = tars[key - GLFW_KEY_1];
     if (action == GLFW_PRESS && key == GLFW_KEY_Q)
         headFlag = !headFlag;
+    if (action == GLFW_PRESS && key == GLFW_KEY_C) {
+        if (moveFlag)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        moveFlag = !moveFlag;
+    }
 
 }
 
@@ -242,21 +227,19 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     }
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{//鼠标事件
-    if (firstMouse){
-        lastX = (float)xpos;
-        lastY = (float)ypos;
+void mouse_callback(GLFWwindow *window, double xpos, double ypos) {//鼠标事件
+    if (firstMouse) {
+        lastX = (float) xpos;
+        lastY = (float) ypos;
         firstMouse = false;
     }
-    float xoffset = (float)xpos - lastX;
-    float yoffset = lastY - (float)ypos; // reversed since y-coordinates go from bottom to top
-    lastX = (float)xpos;
-    lastY = (float)ypos;
+    float xoffset = (float) xpos - lastX;
+    float yoffset = lastY - (float) ypos; // reversed since y-coordinates go from bottom to top
+    lastX = (float) xpos;
+    lastY = (float) ypos;
     camera.processMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{//滚轮事件
-   camera.processMouseScroll(yoffset);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {//滚轮事件
+    camera.processMouseScroll(yoffset);
 }

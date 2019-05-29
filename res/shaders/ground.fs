@@ -1,20 +1,19 @@
-//片段着色器
-#version 450 core
+#version 330 core
 out vec4 FragColor;
 
-in VS_OUT{
+in VS_OUT {
     vec3 FragPos;
     vec3 Normal;
-    vec3 TexCoords;
+    vec2 TexCoords;
     vec4 FragPosLightSpace;
-}fs_in;
+} fs_in;
 
-uniform vec3 lightPos; 
+uniform sampler2D diffuseTexture;
+uniform sampler2D shadowMap;
+
+uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
-//uniform vec3 objectColor;
-uniform samplerCube cubeTexture;
-uniform sampler2D shadowMap;
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
@@ -54,28 +53,24 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 void main()
 {
-    vec3 color=texture(cubeTexture,fs_in.TexCoords).rgb;
+    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
-    // Ambient，环境光
-    float ambientStrength = 0.3;//环境光强度
-    vec3 ambient = ambientStrength * lightColor;
-  	
-    // Diffuse，漫反射
+    // ambient
+    vec3 ambient = 0.3 * color;
+    // diffuse
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-    float diff = max(dot(lightDir,normal), 0.0);
+    float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
-    
-    // Specular，镜面反射
+    // specular
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
-    vec3 halfwayDir=normalize(lightDir+viewDir);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * lightColor;
+    // calculate shadow
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
-    //阴影
-    float shadow=ShadowCalculation(fs_in.FragPosLightSpace);
-    vec3 lighting = (ambient + (1.0-shadow)*(diffuse + specular)) * color;
-
-    FragColor=vec4(lighting,1.0);
-} 
+    FragColor = vec4(lighting, 1.0);
+}

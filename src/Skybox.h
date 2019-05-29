@@ -12,7 +12,7 @@ class Skybox {
 public:
     /*Functions*/
     Skybox();
-    void render(glm::mat4 view, glm::mat4 proj);
+    void render(glm::mat4 &view, glm::mat4 &proj);
     unsigned int loadCubemap(std::vector<std::string> faces);
 private:
     /*Data*/
