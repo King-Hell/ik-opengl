@@ -51,7 +51,7 @@ Skybox::Skybox() {
             -1.0f, -1.0f, 1.0f,
             1.0f, -1.0f, 1.0f
     };
-    // skybox VAO
+    // background VAO
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
     glBindVertexArray(skyboxVAO);
@@ -69,7 +69,7 @@ Skybox::Skybox() {
     };
     cubemapTexture = loadCubemap(faces);
     shader.use();
-    shader.setInt("skybox",0);
+    shader.setInt("background",0);
 }
 
 unsigned int Skybox::loadCubemap(std::vector<std::string> faces) {
@@ -97,12 +97,12 @@ unsigned int Skybox::loadCubemap(std::vector<std::string> faces) {
 
 void Skybox::render(glm::mat4 &view, glm::mat4 &proj) {
     /*渲染方法*/
-    // draw skybox as last
+    // draw background as last
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", proj);
-    // skybox cube
+    // background cube
     glBindVertexArray(skyboxVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);

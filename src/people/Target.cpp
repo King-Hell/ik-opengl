@@ -1,5 +1,5 @@
 #include "Target.h"
-#include "Camera.h"
+#include "../utils/Camera.h"
 
 Target::Target(float x, float y, float z) {
     /*构造函数*/
@@ -16,7 +16,7 @@ Target::Target(float x, float y, float z) {
     yaw = 0.0f;
 }
 
-void Target::render(glm::mat4 view, glm::mat4 proj) {
+void Target::render(glm::mat4 &view, glm::mat4 &projection) {
     /*渲染函数*/
     objectShader.use();
     //设置片段着色器 物体颜色 光照颜色 光照位置 视角位置
@@ -32,7 +32,7 @@ void Target::render(glm::mat4 view, glm::mat4 proj) {
     glm::mat4 model = T * R * S;
     objectShader.setMat4("model",model);
     objectShader.setMat4("view",view);
-    objectShader.setMat4("projection",proj);
+    objectShader.setMat4("projection",projection);
     //模型渲染
     objectModel.draw(objectShader);
 }

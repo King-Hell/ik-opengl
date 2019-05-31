@@ -6,9 +6,9 @@
 //  Copyright © 2017 Jesse and Robb. All rights reserved.
 //
 #pragma once
-#include "Shader.h"
-#include "Model.h"
-#include "Camera.h"
+#include "../utils/Shader.h"
+#include "../utils/Model.h"
+#include "../utils/Camera.h"
 #include <stb/stb_image.h>
 // Std includes
 #include <stdio.h>

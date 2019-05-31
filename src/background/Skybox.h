@@ -4,7 +4,7 @@
 
 #pragma once
 #include <stb/stb_image.h>
-#include "Shader.h"
+#include "../utils/Shader.h"
 
 //Std
 #include <vector>

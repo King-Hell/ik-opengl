@@ -14,6 +14,7 @@
 #include <map>
 
 #include "Chain.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 // GLM includes
 #include <glm/glm.hpp>
@@ -29,27 +30,36 @@
 
 // Tree data structure
 struct ChainNode {
-  Chain * value;
-  ChainNode * parent;
-  vector<ChainNode*> * children;
+    Chain *value;
+    ChainNode *parent;
+    vector<ChainNode *> *children;
 };
 
 class MultiChain {
 
 public:
-  MultiChain(vector<Chain*> chains);
-  bool insert(ChainNode *root, Chain *chain);
-  void solve();
-  void render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap);
-  void renderDepthMap(glm::mat4 &lightSpaceMatrix);
-  void moveHead(Camera_Movement direction, GLfloat deltaTime);
+    MultiChain(){};
 
-  ChainNode * root;//根节点
-  map<ChainNode*, bool> leaves;
-  glm::vec3 origin;
-  
+    MultiChain(vector<Chain *> &chains);
+
+    bool insert(ChainNode *root, Chain *chain);
+
+    void solve();
+
+    void render(glm::mat4 &view, glm::mat4 &projection, glm::mat4 &lightSpaceMatrix, GLuint depthMap);
+
+    void renderDepthMap(glm::mat4 &lightSpaceMatrix);
+
+    void moveHead(Camera_Movement direction, GLfloat deltaTime);
+
+    ChainNode *root;//根节点
+    map<ChainNode *, bool> leaves;
+    glm::vec3 origin;
+
 private:
-  void forward(ChainNode *root);
-  void backward(ChainNode *root);
-  void resetTarget(ChainNode *root,glm::vec3 shift);
+    void forward(ChainNode *root);
+
+    void backward(ChainNode *root);
+
+    void resetTarget(ChainNode *root, glm::vec3 shift);
 };

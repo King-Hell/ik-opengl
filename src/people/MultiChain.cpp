@@ -8,7 +8,7 @@
 
 #include "MultiChain.h"
 
-MultiChain::MultiChain(vector<Chain *> chains) {
+MultiChain::MultiChain(vector<Chain *> &chains) {
     /*构造方法*/
     root = new ChainNode();
     root->value = *chains.begin();

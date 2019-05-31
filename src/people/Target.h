@@ -1,9 +1,9 @@
 //目标点类
 #pragma once
 
-#include "Shader.h"
-#include "Model.h"
-#include "Camera.h"
+#include "../utils/Shader.h"
+#include "../utils/Model.h"
+#include "../utils/Camera.h"
 
 // Std includes
 #include <stdio.h>
@@ -34,8 +34,9 @@ public:
     glm::vec3 scale;//缩放
 
     /* Functions */
+    Target(){};
     Target(float x, float y, float z);//构造方法
-    void render(glm::mat4 view, glm::mat4 proj);//渲染方法
+    void render(glm::mat4 &view, glm::mat4 &projection);//渲染方法
     void processTranslation(Camera_Movement direction, GLfloat deltaTime);//位移方法
 
 private:

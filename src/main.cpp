@@ -7,17 +7,19 @@
 //GLFW
 #include <GLFW/glfw3.h>
 //Project
-#include "Shader.h"
-#include "Camera.h"
-#include "Target.h"
-#include "Chain.h"
-#include "MultiChain.h"
-#include "Ground.h"
-
+#include "utils/Shader.h"
+#include "utils/Camera.h"
+#include "people/Target.h"
+#include "people/Chain.h"
+#include "people/MultiChain.h"
+#include "background/Ground.h"
+#include "Animation.h"
+#include "people/Person.h"
 #define STB_IMAGE_IMPLEMENTATION
+#include "background/Skybox.h"
+#include "utils/DepthMap.h"
 
-#include "Skybox.h"
-#include "DepthMap.h"
+
 //GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,7 +33,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 
-void Do_Movement(Target *target, MultiChain *multiChain = NULL);
+void Do_Movement(Person &person);
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 
@@ -39,7 +41,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
-bool keys[1024];
 GLfloat lastX = (GLfloat) SCR_WIDTH / 2, lastY = (GLfloat) SCR_HEIGHT / 2;
 bool firstMouse = true;
 bool headFlag = false;
@@ -47,11 +48,13 @@ bool moveFlag = false;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
-Target *tars[6];
-Target *tar;
+Setting setting;
+
+Animation animation(&setting);
 
 //主函数
 int main() {
+    //TODO:增加动画功能
     //GLFW初始化
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -87,37 +90,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     //加载模型
-    Target target(0, 0, 0);
-    Target leftArm(-0.8f, 0, 0);
-    Target rightArm(0.8f, 0, 0);
-    Target leftLeg(-0.6f, -1.5f, 0);
-    Target rightLeg(0.6f, -1.5f, 0);
-    Target head(0, 0.5f, 0);
-    Target body(0, -0.5f, 0);
-    tars[0] = &head;
-    tars[1] = &leftArm;
-    tars[2] = &rightArm;
-    tars[3] = &leftLeg;
-    tars[4] = &rightLeg;
-    tars[5] = &body;
-    tar = tars[1];
-    vector<Chain *> vec;
-    vector<glm::vec3> headJoints;
-    headJoints.emplace_back(0, 0.5f, 0);
-    headJoints.emplace_back(0, 0.1f, 0);
-    headJoints.emplace_back(0, 0, 0);
-    vector<glm::vec2> headScales;
-    headScales.emplace_back(0.4f, 0.4f);
-    headScales.emplace_back(0.1f, 0.1f);
-    Chain *headNeck = new Chain(headJoints, &head, headScales);
-    headNeck->setTexture(0, "res/textures/ironman.png");
-    vec.push_back(headNeck);
-    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(-0.8f, 0, 0), &leftArm, 2));
-    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0.8f, 0, 0), &rightArm, 2));
-    vec.push_back(new Chain(glm::vec3(0, 0, 0), glm::vec3(0, -0.7f, 0), &body, 1, 0.4f, 0.15f));
-    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(-0.6f, -1.5f, 0), &leftLeg, 2, 0.12f, 0.12f));
-    vec.push_back(new Chain(glm::vec3(0, -0.7f, 0), glm::vec3(0.6f, -1.5f, 0), &rightLeg, 2, 0.12f, 0.12f));
-    MultiChain multichain(vec);
+    Person person;
     Skybox skybox;
     Ground ground;
     DepthMap depthMap;
@@ -141,58 +114,55 @@ int main() {
         //计算透视矩阵和视图矩阵
         glm::mat4 projection = glm::perspective(camera.Zoom, (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.getViewMatrix();
-        Do_Movement(tar, &multichain);
-        multichain.solve();
+        Do_Movement(person);
+        person.solve();
         depthMap.begin();
-        multichain.renderDepthMap(lightSpaceMatrix);
+        person.renderDepthMap(lightSpaceMatrix);
         ground.renderDepthMap(lightProjection);
         depthMap.end(SCR_WIDTH, SCR_HEIGHT);
-        multichain.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
+        person.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
         ground.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
-        for (int i = 0; i < 6; i++) {
-            tars[i]->render(view, projection);
-        }
+        person.renderTarget(view, projection);
         view = glm::mat4(glm::mat3(camera.getViewMatrix()));
         skybox.render(view, projection);
         //交换缓冲
         glfwSwapBuffers(window);
     }
-
     glfwTerminate();
     return 0;
 }
 
-void Do_Movement(Target *target, MultiChain *multiChain) {
+void Do_Movement(Person &person) {
     //执行动作
     if (headFlag) {
-        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
-            multiChain->moveHead(FORWARD, deltaTime);
-        else if (keys[GLFW_KEY_UP])
-            multiChain->moveHead(UP, deltaTime);
-        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
-            multiChain->moveHead(BACKWARD, deltaTime);
-        else if (keys[GLFW_KEY_DOWN])
-            multiChain->moveHead(DOWN, deltaTime);
+        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_UP])
+            person.moveHead(FORWARD, deltaTime);
+        else if (setting.keys[GLFW_KEY_UP])
+            person.moveHead(UP, deltaTime);
+        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_DOWN])
+            person.moveHead(BACKWARD, deltaTime);
+        else if (setting.keys[GLFW_KEY_DOWN])
+            person.moveHead(DOWN, deltaTime);
 
-        if (keys[GLFW_KEY_LEFT])
-            multiChain->moveHead(LEFT, deltaTime);
-        if (keys[GLFW_KEY_RIGHT])
-            multiChain->moveHead(RIGHT, deltaTime);
+        if (setting.keys[GLFW_KEY_LEFT])
+            person.moveHead(LEFT, deltaTime);
+        if (setting.keys[GLFW_KEY_RIGHT])
+            person.moveHead(RIGHT, deltaTime);
     } else {
-        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
-            target->processTranslation(FORWARD, deltaTime);
-        else if (keys[GLFW_KEY_UP])
-            target->processTranslation(UP, deltaTime);
+        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_UP])
+            person.processTranslation(FORWARD, deltaTime);
+        else if (setting.keys[GLFW_KEY_UP])
+            person.processTranslation(UP, deltaTime);
 
-        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
-            target->processTranslation(BACKWARD, deltaTime);
-        else if (keys[GLFW_KEY_DOWN])
-            target->processTranslation(DOWN, deltaTime);
+        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_DOWN])
+            person.processTranslation(BACKWARD, deltaTime);
+        else if (setting.keys[GLFW_KEY_DOWN])
+            person.processTranslation(DOWN, deltaTime);
 
-        if (keys[GLFW_KEY_LEFT])
-            target->processTranslation(LEFT, deltaTime);
-        if (keys[GLFW_KEY_RIGHT])
-            target->processTranslation(RIGHT, deltaTime);
+        if (setting.keys[GLFW_KEY_LEFT])
+            person.processTranslation(LEFT, deltaTime);
+        if (setting.keys[GLFW_KEY_RIGHT])
+            person.processTranslation(RIGHT, deltaTime);
     }
 }
 
@@ -203,11 +173,11 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GL_TRUE);
 
     if (action == GLFW_PRESS)
-        keys[key] = true;
+        setting.keys[key] = true;
     else if (action == GLFW_RELEASE)
-        keys[key] = false;
+        setting.keys[key] = false;
     if (action == GLFW_PRESS && key >= GLFW_KEY_1 && key <= GLFW_KEY_6)
-        tar = tars[key - GLFW_KEY_1];
+        setting.tar = setting.tars[key - GLFW_KEY_1];
     if (action == GLFW_PRESS && key == GLFW_KEY_Q)
         headFlag = !headFlag;
     if (action == GLFW_PRESS && key == GLFW_KEY_C) {
@@ -218,6 +188,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         moveFlag = !moveFlag;
     }
 
+    if (action == GLFW_PRESS && key == GLFW_KEY_M) {
+        animation.start("running");
+    }
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
