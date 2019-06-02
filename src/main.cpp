@@ -15,12 +15,11 @@
 #include "background/Ground.h"
 #include "Animation.h"
 #include "people/Person.h"
+#include "utils/DepthMap.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "background/Skybox.h"
-#include "utils/DepthMap.h"
-#include <ctime>
 
 //GLM
 #include <glm/glm.hpp>
@@ -182,6 +181,14 @@ void Do_Movement(Person &person) {
         if (keys[GLFW_KEY_RIGHT])
             person.processTranslation(RIGHT, deltaTime);
     }
+    if (keys[GLFW_KEY_W])
+        camera.processTranslation(BACKWARD, deltaTime);
+    if (keys[GLFW_KEY_A])
+        camera.processTranslation(RIGHT, deltaTime);
+    if (keys[GLFW_KEY_S])
+        camera.processTranslation(FORWARD, deltaTime);
+    if (keys[GLFW_KEY_D])
+        camera.processTranslation(LEFT, deltaTime);
 }
 
 

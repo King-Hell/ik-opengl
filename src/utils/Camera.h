@@ -79,9 +79,9 @@ public:
   {
     GLfloat velocity = this->MovementSpeed * deltaTime;
     if (direction == FORWARD)
-      this->Position -= glm::vec3(0, 1.0f, 0) * velocity;
+      this->Position -= this->Front* velocity;
     if (direction == BACKWARD)
-      this->Position += glm::vec3(0, 1.0f, 0) * velocity;
+      this->Position += this->Front* velocity;
     if (direction == LEFT)
       this->Position += this->Right * velocity;
     if (direction == RIGHT)
