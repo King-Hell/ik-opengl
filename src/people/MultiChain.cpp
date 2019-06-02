@@ -39,7 +39,7 @@ bool MultiChain::insert(ChainNode *root, Chain *chain) {
         new_node->children = new vector<ChainNode *>();
 
         root->children->push_back(new_node);
-        root->value->target = new Target(0, 0, 0);
+        root->value->target = new Target(glm::vec3(0, 0, 0));
 
         //标记叶子节点
         if (leaves[root]) leaves[root] = false;

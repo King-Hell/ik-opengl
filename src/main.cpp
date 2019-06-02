@@ -15,10 +15,12 @@
 #include "background/Ground.h"
 #include "Animation.h"
 #include "people/Person.h"
+
 #define STB_IMAGE_IMPLEMENTATION
+
 #include "background/Skybox.h"
 #include "utils/DepthMap.h"
-
+#include <ctime>
 
 //GLM
 #include <glm/glm.hpp>
@@ -45,12 +47,15 @@ GLfloat lastX = (GLfloat) SCR_WIDTH / 2, lastY = (GLfloat) SCR_HEIGHT / 2;
 bool firstMouse = true;
 bool headFlag = false;
 bool moveFlag = false;
-
+extern bool keys[];
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
-Setting setting;
+GLFWwindow *window = NULL;
+extern mutex amLock;
+vector<Person *> people;
+Animation animation(&people, &window);
 
-Animation animation(&setting);
+GLfloat tstart, tend;
 
 //主函数
 int main() {
@@ -64,9 +69,9 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,
-                                          "Computer graphics experiment based on IK, SDU CS Li Tong",
-                                          nullptr, nullptr);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT,
+                              "Computer graphics experiment based on IK, SDU CS Li Tong",
+                              nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
     //设置键盘鼠标回调函数
@@ -90,19 +95,25 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     //加载模型
-    Person person;
+    people.emplace_back(new Person(glm::vec3(0, 0, 0)));
+/*    people.emplace_back(new Person(glm::vec3(-2.0f,0,0)));
+    people.emplace_back(new Person(glm::vec3(2.0f,0,0)));
+    people.emplace_back(new Person(glm::vec3(-1.0f,2.0f,0)));
+    people.emplace_back(new Person(glm::vec3(1.0f,2.0f,0)));*/
     Skybox skybox;
     Ground ground;
     DepthMap depthMap;
     //设置光线
     glm::vec3 lightPos(-1.0f, 1.0f, 1.0f);
-    GLfloat near_plane = 1.0f, far_plane = 7.5f;
+    GLfloat near_plane = -7.5f, far_plane = 7.5f;
     glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
     glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0, 1.0f, 0));
     glm::mat4 lightSpaceMatrix = lightProjection * lightView;
     while (!glfwWindowShouldClose(window)) {
         /*渲染主循环*/
         //获取帧间隔
+        amLock.lock();
+        glfwMakeContextCurrent(window);
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
@@ -114,19 +125,26 @@ int main() {
         //计算透视矩阵和视图矩阵
         glm::mat4 projection = glm::perspective(camera.Zoom, (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.getViewMatrix();
-        Do_Movement(person);
-        person.solve();
         depthMap.begin();
-        person.renderDepthMap(lightSpaceMatrix);
+        for (uint i = 0; i < people.size(); i++) {
+            Do_Movement(*people[i]);
+            people[i]->solve();
+            people[i]->renderDepthMap(lightSpaceMatrix);
+        }
         ground.renderDepthMap(lightProjection);
         depthMap.end(SCR_WIDTH, SCR_HEIGHT);
-        person.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
+        for (uint i = 0; i < people.size(); i++) {
+            people[i]->render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
+            //people[i].renderTarget(view, projection);
+        }
+        people[0]->renderTarget(view, projection);
         ground.render(view, projection, lightSpaceMatrix, depthMap.getDepthMap());
-        person.renderTarget(view, projection);
         view = glm::mat4(glm::mat3(camera.getViewMatrix()));
         skybox.render(view, projection);
         //交换缓冲
         glfwSwapBuffers(window);
+        glfwMakeContextCurrent(NULL);
+        amLock.unlock();
     }
     glfwTerminate();
     return 0;
@@ -135,33 +153,33 @@ int main() {
 void Do_Movement(Person &person) {
     //执行动作
     if (headFlag) {
-        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_UP])
+        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
             person.moveHead(FORWARD, deltaTime);
-        else if (setting.keys[GLFW_KEY_UP])
+        else if (keys[GLFW_KEY_UP])
             person.moveHead(UP, deltaTime);
-        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_DOWN])
+        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
             person.moveHead(BACKWARD, deltaTime);
-        else if (setting.keys[GLFW_KEY_DOWN])
+        else if (keys[GLFW_KEY_DOWN])
             person.moveHead(DOWN, deltaTime);
 
-        if (setting.keys[GLFW_KEY_LEFT])
+        if (keys[GLFW_KEY_LEFT])
             person.moveHead(LEFT, deltaTime);
-        if (setting.keys[GLFW_KEY_RIGHT])
+        if (keys[GLFW_KEY_RIGHT])
             person.moveHead(RIGHT, deltaTime);
     } else {
-        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_UP])
+        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_UP])
             person.processTranslation(FORWARD, deltaTime);
-        else if (setting.keys[GLFW_KEY_UP])
+        else if (keys[GLFW_KEY_UP])
             person.processTranslation(UP, deltaTime);
 
-        if ((setting.keys[GLFW_KEY_LEFT_SHIFT] || setting.keys[GLFW_KEY_RIGHT_SHIFT]) && setting.keys[GLFW_KEY_DOWN])
+        if ((keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) && keys[GLFW_KEY_DOWN])
             person.processTranslation(BACKWARD, deltaTime);
-        else if (setting.keys[GLFW_KEY_DOWN])
+        else if (keys[GLFW_KEY_DOWN])
             person.processTranslation(DOWN, deltaTime);
 
-        if (setting.keys[GLFW_KEY_LEFT])
+        if (keys[GLFW_KEY_LEFT])
             person.processTranslation(LEFT, deltaTime);
-        if (setting.keys[GLFW_KEY_RIGHT])
+        if (keys[GLFW_KEY_RIGHT])
             person.processTranslation(RIGHT, deltaTime);
     }
 }
@@ -169,27 +187,38 @@ void Do_Movement(Person &person) {
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode) {
     //键盘回调
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
 
-    if (action == GLFW_PRESS)
-        setting.keys[key] = true;
-    else if (action == GLFW_RELEASE)
-        setting.keys[key] = false;
-    if (action == GLFW_PRESS && key >= GLFW_KEY_1 && key <= GLFW_KEY_6)
-        setting.tar = setting.tars[key - GLFW_KEY_1];
-    if (action == GLFW_PRESS && key == GLFW_KEY_Q)
-        headFlag = !headFlag;
-    if (action == GLFW_PRESS && key == GLFW_KEY_C) {
-        if (moveFlag)
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        else
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        moveFlag = !moveFlag;
-    }
-
-    if (action == GLFW_PRESS && key == GLFW_KEY_M) {
-        animation.start("running");
+    if (action == GLFW_PRESS) {
+        keys[key] = true;
+        tstart = glfwGetTime();
+        switch (key) {
+            case GLFW_KEY_ESCAPE:
+                glfwSetWindowShouldClose(window, GL_TRUE);
+                break;
+            case GLFW_KEY_Q:
+                headFlag = !headFlag;
+                break;
+            case GLFW_KEY_C:
+                if (moveFlag)
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                else
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                moveFlag = !moveFlag;
+                break;
+            case GLFW_KEY_M:
+                animation.start("dance");
+                break;
+            default:
+                if (key >= GLFW_KEY_1 && key <= GLFW_KEY_6) {
+                    for (uint i = 0; i < people.size(); i++) {
+                        people[i]->select(key - GLFW_KEY_1);
+                    }
+                }
+        }
+    } else if (action == GLFW_RELEASE) {
+        keys[key] = false;
+        tend = glfwGetTime();
+        cout << "Key:" << key << ",time:" << tend - tstart << endl;
     }
 }
 

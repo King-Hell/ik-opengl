@@ -35,7 +35,8 @@ public:
 
     /* Functions */
     Target(){};
-    Target(float x, float y, float z);//构造方法
+
+    Target(glm::vec3 pos);//构造方法
     void render(glm::mat4 &view, glm::mat4 &projection);//渲染方法
     void processTranslation(Camera_Movement direction, GLfloat deltaTime);//位移方法
 

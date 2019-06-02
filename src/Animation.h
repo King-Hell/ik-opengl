@@ -4,29 +4,29 @@
 
 #pragma once
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <thread>
+#include <mutex>
 #include <string>
 #include <iostream>
 #include "people/Target.h"
+#include "people/Person.h"
+
 
 using namespace std;
 
-struct Setting{
-    bool keys[1024];
-    Target *tars[6];
-    Target *tar;
-};
-
 class Animation {
 public:
-    Animation(Setting *setting);
+    Animation(vector<Person *> *people, GLFWwindow **window);
 
     void start(string name);
 
 private:
-    static void running(Setting *setting);
+    static void running(string name, vector<Person *> *people);
 
-    Setting *setting;
+    vector<Person *> *people;
+    GLFWwindow **window;
 };
 
 

@@ -1,7 +1,7 @@
 #include "Target.h"
 #include "../utils/Camera.h"
 
-Target::Target(float x, float y, float z) {
+Target::Target(glm::vec3 pos) {
     /*构造函数*/
     //加载着色器
     Shader modelS(vertexShaderPath, fragShaderPath);
@@ -10,7 +10,7 @@ Target::Target(float x, float y, float z) {
     Model modelM(pathToModel);
     objectModel = modelM;
     //目标点需要增加部分偏移量防止算法出错
-    position = glm::vec3(x, y, z) + 0.0001f;
+    position = pos + 0.0001f;
     scale = glm::vec3(.05f, .05f, .05f);
     pitch = 0.0f;
     yaw = 0.0f;

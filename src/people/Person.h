@@ -10,7 +10,9 @@
 
 class Person {
 public:
-    Person();
+    Person() {}
+
+    Person(glm::vec3 position);
 
     Target &getLeftArm() { return leftArm; }
 
@@ -35,6 +37,8 @@ public:
     void moveHead(Camera_Movement direction, GLfloat deltaTime) { multichain.moveHead(direction, deltaTime); }
 
     void select(Target &selected) { this->selected = &selected; }
+
+    void select(int i);
 
     void processTranslation(Camera_Movement direction, GLfloat deltaTime) {
         selected->processTranslation(direction, deltaTime);
